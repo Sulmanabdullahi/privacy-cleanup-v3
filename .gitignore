@@ -1,0 +1,5 @@
+.venv/
+__pycache__/
+privacy_cleanup.db
+.DS_Store
+.env

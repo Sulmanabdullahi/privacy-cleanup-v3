@@ -1,0 +1,25 @@
+PRIVACY CLEANUP v3
+
+macOS / Linux
+---------------
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app.py
+
+
+Windows PowerShell
+------------------
+python -m venv .venv
+.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+streamlit run app.py
+
+
+Main workflow
+-------------
+1. My Info
+2. Auto Scan
+3. Review Findings
+4. Removal Center
+5. Verify
