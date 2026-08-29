@@ -192,6 +192,18 @@ Please confirm when this request has been completed.
 
 Thank you."""
 
+def check_breaches(email):
+    endpoint = f"https://api.xposedornot.com/v1/check-email/{quote_plus(email)}"
+    r = requests.get(endpoint, timeout=15)
+    if r.status_code == 404:
+        return []
+    r.raise_for_status()
+    data = r.json()
+    breaches = data.get("breaches") or []
+    if breaches and isinstance(breaches[0], list):
+        return breaches[0]
+    return breaches
+
 def serper_search(query, api_key, num=10):
     endpoint = "https://google.serper.dev/search"
     headers = {"X-API-KEY": api_key, "Content-Type": "application/json"}
@@ -249,7 +261,7 @@ with st.sidebar:
     st.subheader("🛡️ Privacy Cleanup")
     page = st.radio(
         "Navigation",
-        ["Home", "1. My Info", "2. Auto Scan", "3. Review Findings", "4. Removal Center", "5. Verify", "Settings"],
+        ["Home", "1. My Info", "2. Auto Scan", "Breach & IP check", "3. Review Findings", "4. Removal Center", "5. Verify", "Settings"],
         label_visibility="collapsed"
     )
     st.divider()
@@ -343,6 +355,35 @@ elif page == "2. Auto Scan":
                         st.warning(f"Search failed for one query: {e}")
                 status.update(label=f"Scan complete — {found} new results queued", state="complete")
             st.success(f"Added {found} new possible exposures for review.")
+
+elif page == "Breach & IP check":
+    st.header("Breach & IP check")
+
+    st.subheader("Your public IP address")
+    st.caption("Detected from your browser's current connection to this app.")
+    ip_address = getattr(st.context, "ip_address", None)
+    if ip_address:
+        st.metric("Public IP", ip_address)
+    else:
+        st.info("IP address isn't available in this environment.")
+
+    st.divider()
+    st.subheader("Data breach check")
+    st.caption("Checks an email against public breach datasets via the free XposedOrNot API. Nothing is sent to this app's own server.")
+    breach_email = st.text_input("Email to check", value=profile[1])
+    if st.button("Check for breaches", type="primary", disabled=not bool(breach_email.strip())):
+        try:
+            with st.spinner("Checking known breach datasets..."):
+                breaches = check_breaches(breach_email.strip())
+        except Exception as e:
+            st.error(f"Breach check failed: {e}")
+        else:
+            if not breaches:
+                st.success("No breaches found for this email in this dataset.")
+            else:
+                st.warning(f"Found in {len(breaches)} known breach(es).")
+                for name in breaches:
+                    st.markdown(f"- **{name}**")
 
 elif page == "3. Review Findings":
     st.header("3. Review Findings")
